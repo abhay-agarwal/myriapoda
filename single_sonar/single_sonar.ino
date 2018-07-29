@@ -12,7 +12,7 @@ const int echoPin = 10;
 
 // defines variables
 long distance;
-unsigned long time = 0;
+long elapsed = 0;
 
 void setup() {
   pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
@@ -47,7 +47,7 @@ void setup() {
 
 void loop() {
   
-  time = millis();
+  elapsed = millis();
   // Clears the trigPin
   digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
@@ -65,9 +65,13 @@ void loop() {
   //smoothed = (a * distance) + (b * smoothed);
   
   digitalWrite(trigPin, LOW);
+
+  elapsed = millis() - elapsed;
   
   // Prints the distance on the Serial Monitor
   Serial.print(distance);
   Serial.print(" ");
-  Serial.println(fir.processReading(distance));
+  Serial.print(fir.processReading(distance));
+  Serial.print(" ");
+  Serial.println(1000 / elapsed);
 }
