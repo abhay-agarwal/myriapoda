@@ -11,14 +11,14 @@ const int trigPin = 9;
 const int echoPin = 10;
 
 // defines variables
-long distance;
-long elapsed = 0;
+volatile long duration; //microseconds
+volatile long distance; // inches
+volatile long filtered;
 
 void setup() {
-  pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
+  //pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
   pinMode(echoPin, INPUT); // Sets the echoPin as an Input
-  Serial.begin(115200); // Starts the serial communication
-
+  
   //http://t-filter.engineerjs.com
   //0-1 Hz Pass
   //3-10Hz Stop
@@ -39,39 +39,36 @@ void setup() {
   };
   // Set the coefficients
   fir.setFilterCoeffs(coef);
+
+  attachInterrupt(echoPin, startMeasuring, RISING);
+  Timer3.attachInterrupt(displayFilteredMetrics).setFrequency(20).start();
+  Serial.begin(115200); // Starts the serial communication
+}
+
+void startMeasuring() {
+  duration = micros();
+  attachInterrupt(echoPin, stopMeasuring, FALLING);
+}
+
+void stopMeasuring() {
+  duration = micros() - duration;
+  distance = duration / 147;
   
-  // The filter automatically determines the gain
-  //Serial.print("Automatically calculated gain: ");
-  //Serial.println(fir.getGain());
+  attachInterrupt(echoPin, startMeasuring, RISING);
+}
+
+void displayFilteredMetrics() {
+  //filter reading every 20Hz
+  filtered = fir.processReading(distance);
+  
+  // Prints the distance on the Serial Monitor for prev iteration
+  Serial.print(distance);
+  Serial.print(" ");
+  Serial.println(filtered);
 }
 
 void loop() {
-  
-  elapsed = millis();
-  // Clears the trigPin
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
-  
-  // Sets the trigPin on HIGH state for 10 micro seconds
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  
-  
-  // Reads the echoPin, returns the sound wave travel time in microseconds
-  // 147 uS per inch
-  distance = pulseIn(echoPin, HIGH) / 147;
-  
-  // Calculating the distance
-  //smoothed = (a * distance) + (b * smoothed);
-  
-  digitalWrite(trigPin, LOW);
-
-  elapsed = millis() - elapsed;
-  
-  // Prints the distance on the Serial Monitor
-  Serial.print(distance);
-  Serial.print(" ");
-  Serial.print(fir.processReading(distance));
-  Serial.print(" ");
-  Serial.println(1000 / elapsed);
+  while (1) {
+    
+  }
 }
